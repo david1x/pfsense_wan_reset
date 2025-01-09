@@ -88,5 +88,5 @@ if __name__ == "__main__":
             result = reset_wan_interface(h=HEADERS, status='false')
             if result:
                 print("WAN is Back ONLINE!")
-        time.sleep(10)
+        time.sleep(20)
     
