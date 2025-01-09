@@ -3,12 +3,17 @@ import time
 import urllib3
 import warnings
 import requests
+import logging
 from dotenv import load_dotenv
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+)
 
 API_KEY = os.getenv('API_KEY')
 PFSENSE_URL = os.getenv('PFSENSE_URL')
@@ -31,8 +36,8 @@ def _apply_get(h, section='interface'):
             applied = data.get('data').get('applied')
         return applied
     except Exception as e:
-        print("_apply_get: Failed to connect")
-        print(e)
+        logging.error("_apply_get: Failed to connect")
+        logging.error(e)
         return False
 
 def _apply_post(h, section='interface'):
@@ -46,8 +51,8 @@ def _apply_post(h, section='interface'):
             applied = data.get('data').get('applied')
         return applied
     except Exception as e:
-        print("_apply_post: Failed to connect")
-        print(e)
+        logging.error("_apply_post: Failed to connect")
+        logging.error(e)
         return False
                 
 def get_wan_status(h):
@@ -60,8 +65,8 @@ def get_wan_status(h):
             status = data.get('data')[0].get('status') # [0] is the WAN Interface in the output, Change depend on your output
         return status
     except Exception as e:
-        print("get_wan_status: Failed to connect")
-        print(e)
+        logging.error("get_wan_status: Failed to connect")
+        logging.error(e)
 
 def reset_wan_interface(h, status):
     try:
@@ -77,16 +82,17 @@ def reset_wan_interface(h, status):
             reset_wan_interface(h=HEADERS, status='true')
         return result_get
     except Exception as e:
-        print("reset_wan_interface: Failed to connect")
-        print(e)
+        logging.error("reset_wan_interface: Failed to connect")
+        logging.error(e)
        
 if __name__ == "__main__":
     while True:
         status = get_wan_status(h=HEADERS)
         if status != 'up':
-            print('WAN is OFFLINE!!!\nInitiate WAN Reset...')
+            logging.error(' WAN is OFFLINE!!!')
+            logging.warning('Initiate WAN Reset...')
             result = reset_wan_interface(h=HEADERS, status='false')
             if result:
-                print("WAN is Back ONLINE!")
+                logging.info("WAN is Back ONLINE!")
         time.sleep(20)
     
