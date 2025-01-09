@@ -31,7 +31,7 @@ def _apply_get(h, section='interface'):
             applied = data.get('data').get('applied')
         return applied
     except Exception as e:
-        print("Fail to connect / retrieve data")
+        print("_apply_get: Failed to connect")
         print(e)
         return False
 
@@ -46,7 +46,7 @@ def _apply_post(h, section='interface'):
             applied = data.get('data').get('applied')
         return applied
     except Exception as e:
-        print("Fail to connect")
+        print("_apply_post: Failed to connect")
         print(e)
         return False
                 
@@ -60,31 +60,33 @@ def get_wan_status(h):
             status = data.get('data')[0].get('status') # [0] is the WAN Interface in the output, Change depend on your output
         return status
     except Exception as e:
-        print("Failed to connect")
+        print("get_wan_status: Failed to connect")
         print(e)
 
 def reset_wan_interface(h, status):
     try:
-        data = f'{{"id": "wan", "if": {PHYSICAL_PORT}, "enable": {status}}}'
+        data = f'{{"id": "wan", "if": "{PHYSICAL_PORT}", "enable": {status}}}'
         response = requests.patch(f'https://{PFSENSE_URL}:{PFSENSE_PORT}/api/v2/interface', verify=False, headers=h, data=data)
         if response.status_code != 200:
             raise(f"Failed to get request. status code: {response.status_code}")
         data = response.json()
         if data:
-            result_post = _apply_post(h=HEADERS, section='interface')
+            _apply_post(h=HEADERS, section='interface')
             result_get = _apply_get(h=HEADERS, section='interface')
         if (result_get and status == 'false'):
             reset_wan_interface(h=HEADERS, status='true')
-        return status
+        return result_get
     except Exception as e:
-        print("Failed to connect")
+        print("reset_wan_interface: Failed to connect")
         print(e)
        
 if __name__ == "__main__":
     while True:
         status = get_wan_status(h=HEADERS)
         if status != 'up':
-            print('WAN is OFFLINE\nInitiate WAN Reset')
-            reset_wan_interface(h=HEADERS, status='false')
-        time.sleep(60)
+            print('WAN is OFFLINE!!!\nInitiate WAN Reset...')
+            result = reset_wan_interface(h=HEADERS, status='false')
+            if result:
+                print("WAN is Back ONLINE!")
+        time.sleep(10)
     
